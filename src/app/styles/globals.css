@@ -1,0 +1,9 @@
+/* styles/globals.css */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+
+@layer components {
+  /* إضافة أي استايلات مخصصة هنا إذا لزم الأمر */
+}

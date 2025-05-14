@@ -1,0 +1,36 @@
+
+// 📄 prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  company     String
+  createdAt   DateTime @default(now())
+}
+// prisma/schema.prisma
+model User {
+  id              String    @id @default(uuid())
+  firstName       String
+  lastName        String
+  username        String    @unique
+  email           String    @unique
+  password        String
+  phone           String
+  countryCode     String
+  dateOfBirth     DateTime
+  gender          String?
+  address         String?
+  profilePicture  String?
+  termsAccepted   Boolean
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}

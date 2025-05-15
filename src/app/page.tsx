@@ -1,107 +1,147 @@
-import Link from 'next/link';
-import { Search, Briefcase, Building2 } from 'lucide-react';
+"use client";
+import { useState, useMemo } from "react";
+import useSWR from "swr";
+import Fuse from "fuse.js";
+import { useDebounce } from "use-debounce";
+import { useInView } from "react-intersection-observer";
+import JobCard from "./components/ui/job-card";
+import { SearchBar } from "./components/ui/search-bar";
 
-// Navbar Component
-const Navbar = () => {
-  return (
-    <nav className="bg-white shadow-md fixed top-0 left-0 w-full z-10">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold text-blue-600">
-          منصة التوظيف
-        </Link>
-        <div className="space-x-6">
-          <Link href="/" className="text-gray-800 hover:text-blue-600">الرئيسية</Link>
-          <Link href="/jobs" className="text-gray-800 hover:text-blue-600">الوظائف</Link>
-          <Link href="/companies" className="text-gray-800 hover:text-blue-600">الشركات</Link>
-          <Link href="/login" className="text-gray-800 hover:text-blue-600">تسجيل الدخول</Link>
-        </div>
-      </div>
-    </nav>
-  );
-};
+enum JobType {
+  FULL_TIME = "دوام كامل",
+  PART_TIME = "دوام جزئي",
+  REMOTE = "عن بُعد",
+  HYBRID = "هجين",
+}
+
+interface Company {
+  name: string;
+  logo: string;
+  location: string;
+}
+
+interface Job {
+  id: string;
+  title: string;
+  company: Company;
+  salaryRange: [number, number];
+  description: string;
+  requirements: string[];
+  type: JobType;
+  postedAt: string;
+  expiresAt?: string;
+}
+
+const fetcher = (url: string) =>
+  fetch(url, {
+    headers: {
+      "X-API-Key": process.env.NEXT_PUBLIC_API_KEY!,
+    },
+  }).then((res) => res.json());
 
 export default function HomePage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery] = useDebounce(searchQuery, 300);
+  const [page, setPage] = useState(1);
+  const { ref, inView } = useInView();
+
+  const { data: jobs = [], isLoading, error } = useSWR<Job[]>(
+    `/api/jobs?page=${page}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    }
+  );
+
+  const fuse = useMemo(
+    () =>
+      new Fuse(jobs, {
+        keys: ["title", "description", "company.name", "requirements"],
+        threshold: 0.3,
+        includeMatches: true,
+      }),
+    [jobs]
+  );
+
+  const filteredJobs = useMemo(() => {
+    if (!debouncedQuery.trim()) return jobs;
+    return fuse.search(debouncedQuery).map((result) => result.item);
+  }, [debouncedQuery, jobs, fuse]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  };
   return (
-    <main className="bg-white text-gray-800 pt-24">
-      <Navbar />
+    <main className="min-h-screen p-4 bg-gray-50">
+      <div className="max-w-6xl mx-auto">
+        <SearchBar
+          onSearch={handleSearch}
+          aria-label="ابحث عن الوظائف"
+          className="mb-8"
+        />
 
-      {/* Hero Section */}
-      <section className="bg-gray-100 py-16 px-6 md:px-12 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">ابحث عن وظيفتك المثالية</h1>
-        <p className="text-lg text-gray-600 mb-8">منصة موثوقة للباحثين عن العمل وأصحاب العمل</p>
+        {isLoading && <LoadingSkeleton />}
 
-        {/* Search Bar */}
-        <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto">
-          <input
-            type="text"
-            placeholder="المسمى الوظيفي / الكلمات المفتاحية"
-            className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none"
-          />
-          <input
-            type="text"
-            placeholder="المدينة / الموقع"
-            className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none"
-          />
-        </div>
-        <button className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition">
-          ابحث عن وظيفة
-        </button>
-      </section>
+        {error && (
+          <div className="text-red-500 text-center mt-8">
+            حدث خطأ في تحميل البيانات
+          </div>
+        )}
 
-      {/* Featured Jobs */}
-      <section className="py-16 px-6 md:px-12">
-        <h2 className="text-2xl font-semibold mb-8 text-center">الوظائف المميزة</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((id) => (
-            <div key={id} className="bg-white shadow-md p-6 rounded-xl">
-              <h3 className="text-xl font-bold mb-2">وظيفة مميزة #{id}</h3>
-              <p className="text-gray-600 mb-4">تفاصيل مختصرة عن الوظيفة وموقعها.</p>
-              <Link href="#" className="text-blue-600 hover:underline">عرض التفاصيل</Link>
+        {!isLoading && !error && filteredJobs.length === 0 && (
+          <EmptyState message="لا توجد نتائج مطابقة" />
+        )}
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredJobs.map((job, index) => (
+            <div
+              key={job.id}
+              ref={index === filteredJobs.length - 1 ? ref : null}
+            >
+              <JobCard job={{...job, id: parseInt(job.id)}} />
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="bg-gray-50 py-16 px-6 md:px-12">
-        <h2 className="text-2xl font-semibold mb-8 text-center">تصفح حسب القطاع</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {[ 
-            { title: 'تقنية المعلومات', icon: <Search /> },
-            { title: 'الصحة', icon: <Briefcase /> },
-            { title: 'التسويق', icon: <Building2 /> },
-            { title: 'التعليم', icon: <Briefcase /> }
-          ].map((cat, idx) => (
-            <div key={idx} className="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
-              <div className="text-blue-600 mb-3 mx-auto w-10 h-10">{cat.icon}</div>
-              <h3 className="text-lg font-semibold">{cat.title}</h3>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Top Hiring Companies */}
-      <section className="py-16 px-6 md:px-12">
-        <h2 className="text-2xl font-semibold mb-8 text-center">أفضل الشركات التي توظف الآن</h2>
-        <div className="grid md:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map((company) => (
-            <div key={company} className="bg-white shadow-md p-6 rounded-xl text-center">
-              <div className="w-16 h-16 mx-auto bg-gray-200 rounded-full mb-4"></div>
-              <h3 className="font-semibold">شركة #{company}</h3>
-              <p className="text-sm text-gray-500">وظائف متاحة الآن</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Call to Action */}
-      <section className="bg-blue-600 py-12 px-6 md:px-12 text-center text-white">
-        <h2 className="text-2xl font-semibold mb-4">هل تبحث عن موظفين؟</h2>
-        <p className="mb-6">انشر وظيفتك الآن واجذب أفضل الكفاءات</p>
-        <Link href="#" className="bg-white text-blue-600 px-6 py-3 rounded-full hover:bg-gray-100 transition">
-          أضف وظيفة
-        </Link>
-      </section>
+        {!isLoading && filteredJobs.length > 0 && (
+          <div className="mt-8 text-center text-gray-500">
+            {inView && "جاري تحميل المزيد..."}
+          </div>
+        )}
+      </div>
     </main>
   );
 }
+const LoadingSkeleton = () => (
+  <div className="space-y-4 animate-pulse">
+    {[...Array(3)].map((_, i) => (
+      <div
+        key={i}
+        className="h-32 bg-gray-200 rounded-lg"
+        role="status"
+        aria-label="جاري التحميل"
+      />
+    ))}
+  </div>
+);
+
+const EmptyState = ({ message }: { message: string }) => (
+  <div className="text-center py-12">
+    <div className="text-gray-500 text-lg mb-4">{message}</div>
+    <svg
+      className="mx-auto h-24 w-24 text-gray-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  </div>
+);
+

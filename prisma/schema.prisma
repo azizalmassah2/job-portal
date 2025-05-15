@@ -1,5 +1,4 @@
-
-// 📄 prisma/schema.prisma
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,14 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Job {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  company     String
-  createdAt   DateTime @default(now())
-}
-// prisma/schema.prisma
 model User {
   id              String    @id @default(uuid())
   firstName       String
@@ -33,4 +24,45 @@ model User {
   termsAccepted   Boolean
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  companies Company[] // علاقة one-to-many
+}
+
+model Company {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  logo            String?
+  website         String?
+  email           String    @unique
+  phone           String?
+  address         String?
+  userId          String    // مفتاح خارجي
+  user            User      @relation(fields: [userId], references: [id])
+  jobs            Job[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Job {
+  id              String    @id @default(uuid())
+  title           String
+  description     String
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id])
+  salaryMin       Int
+  salaryMax       Int
+  location        String
+  type            String    // يفضل استخدام enum هنا
+  skills          Skill[]   // علاقة many-to-many
+  experienceLevel String?
+  status          String    @default("ACTIVE")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Skill {
+  id      String  @id @default(uuid())
+  name    String  @unique
+  jobs    Job[]   // علاقة many-to-many
 }

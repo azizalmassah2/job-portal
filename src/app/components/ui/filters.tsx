@@ -1,4 +1,5 @@
 // app/components/ui/filters.tsx
+'use client';
 export function Filters() {
     return (
       <div className="mb-8">

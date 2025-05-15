@@ -2,24 +2,24 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Home, Briefcase, Building2, Phone, LogIn, Menu, Moon, Sun, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedLogo from './AnimatedLogo';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    // التحميل الأولي من localStorage
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('darkMode') === 'true';
-    }
-    return false;
-  });
+  const [darkMode, setDarkMode] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
-    // حفظ التفضيل في localStorage
+    const storedMode = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(storedMode);
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('darkMode', darkMode.toString());
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
@@ -53,8 +53,10 @@ const Navbar = () => {
         isScrolled ? 'bg-white/90 dark:bg-gray-900/90 shadow-sm' : 'bg-transparent'
       }`}
       style={{
-        borderBottom: `1px solid ${darkMode ? 'rgba(55, 65, 81, 0.2)' : 'rgba(209, 213, 219, 0.2)'}`,
-        height: '64px'
+        borderBottom: isScrolled
+          ? `1px solid ${darkMode ? 'rgba(55, 65, 81, 0.2)' : 'rgba(209, 213, 219, 0.2)'}`
+          : 'none',
+        height: '64px',
       }}
       role="navigation"
       aria-label="القائمة الرئيسية"
@@ -62,11 +64,12 @@ const Navbar = () => {
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
         <div className="flex items-center justify-between h-full relative">
 
-          {/* قائمة الجوال */}
+          {/* زر قائمة الجوال */}
           <div className="lg:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              aria-label="فتح القائمة"
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
             >
@@ -74,33 +77,36 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* القائمة الرئيسية لسطح المكتب */}
+          {/* قائمة سطح المكتب */}
           <ul className="hidden lg:flex items-center h-full space-x-6 rtl:space-x-reverse">
             {navLinks.map((link) => (
               <motion.li
-                key={link.href}
+                key={`${link.href}-${link.label}`}
                 whileHover={{ scale: 1.05 }}
                 className="relative h-full flex items-center"
               >
                 <Link
                   href={link.href}
-                  className="flex items-center px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className={`flex items-center px-3 py-2 transition-colors font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 ${
+                    pathname === link.href ? 'text-blue-600 dark:text-blue-400' : ''
+                  }`}
                   role="menuitem"
+                  aria-current={pathname === link.href ? 'page' : undefined}
                 >
                   {link.icon}
-                  <span className="mr-2 font-medium">{link.label}</span>
+                  <span className="mr-2">{link.label}</span>
                 </Link>
-                <motion.div
-                  className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 dark:bg-blue-400"
-                  initial={{ scaleX: 0 }}
-                  whileInView={{ scaleX: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
+                {pathname === link.href && (
+                  <motion.div
+                    className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 dark:bg-blue-400"
+                    layoutId="underline"
+                  />
+                )}
               </motion.li>
             ))}
           </ul>
 
-          {/* الشعار المركزي */}
+          {/* الشعار */}
           <div className="absolute left-1/2 transform -translate-x-1/2">
             <motion.div
               whileHover={{ scale: 1.1 }}
@@ -111,7 +117,7 @@ const Navbar = () => {
             </motion.div>
           </div>
 
-          {/* عناصر التحكم */}
+          {/* أدوات التحكم */}
           <div className="flex items-center gap-4 rtl:gap-reverse">
             <button
               onClick={() => setDarkMode(!darkMode)}
@@ -126,7 +132,7 @@ const Navbar = () => {
               className="hidden lg:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:shadow-lg transition-all"
             >
               <LogIn size={18} />
-              <span className="font-medium">تسجيل الدخول</span>
+              <span>تسجيل الدخول</span>
             </Link>
           </div>
         </div>
@@ -146,15 +152,16 @@ const Navbar = () => {
             <ul className="p-4 space-y-3">
               {navLinks.map((link) => (
                 <motion.li
-                  key={link.href}
+                  key={`${link.href}-mobile`}
                   whileHover={{ scale: 1.02 }}
                   className="border-b dark:border-gray-700 last:border-0"
                 >
                   <Link
                     href={link.href}
-                    className="flex items-center p-2 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
+                    className="flex items-center p-2 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                     onClick={() => setMenuOpen(false)}
                     role="menuitem"
+                    aria-current={pathname === link.href ? 'page' : undefined}
                   >
                     {link.icon}
                     <span className="mr-2">{link.label}</span>
@@ -167,7 +174,6 @@ const Navbar = () => {
       </AnimatePresence>
     </motion.nav>
   );
-
 };
 
 export default Navbar;

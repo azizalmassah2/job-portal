@@ -43,25 +43,31 @@ export default function JobSeekerDashboard() {
           icon={<FileText size={24} />}
           title="ملفي الشخصي"
           description="تحكم في بياناتك والسيرة الذاتية"
-          href="/profile"
+          href="JobSeekerDashboard/profile"
+        />
+        <DashboardCard
+          icon={<Briefcase size={24} />}
+          title="اعدادات الحساب"
+          description="عرض وتعديل بيانات الحساب"
+          href="JobSeekerDashboard/account-settings"
         />
         <DashboardCard
           icon={<Briefcase size={24} />}
           title="الوظائف التي تقدمت لها"
           description="عرض وتتبع حالة طلباتك"
-          href="/applied-jobs"
+          href="JobSeekerDashboard/applied-jobs"
         />
         <DashboardCard
           icon={<Bookmark size={24} />}
           title="الوظائف المحفوظة"
           description="احتفظ بالوظائف المفضلة للرجوع إليها لاحقًا"
-          href="/saved-jobs"
+          href="JobSeekerDashboard/saved-jobs"
         />
         <DashboardCard
           icon={<Bell size={24} />}
           title="الإشعارات"
           description="تنبيهات عن الوظائف والتحديثات"
-          href="/notifications"
+          href="JobSeekerDashboard/notifications"
         />
       </div>
     </main>

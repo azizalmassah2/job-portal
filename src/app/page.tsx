@@ -73,12 +73,23 @@ export default function HomePage() {
     setSearchQuery(query);
     setPage(1);
   };
+
   return (
-    <main className="min-h-screen p-4 bg-gray-50">
+    <main className="min-h-screen pt-20 p-4 bg-gray-50">
       <div className="max-w-6xl mx-auto">
+        {/* نص ترحيبي */}
+        <header className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            ابحث عن فرصتك الوظيفية المثالية
+          </h1>
+          <p className="text-gray-600 text-lg">
+            اكتشف آلاف الوظائف المتاحة في مختلف المجالات بسهولة.
+          </p>
+        </header>
+
         <SearchBar
           onSearch={handleSearch}
-          aria-label="ابحث عن الوظائف"
+          ariaLabel="ابحث عن الوظائف"
           className="mb-8"
         />
 
@@ -100,7 +111,7 @@ export default function HomePage() {
               key={job.id}
               ref={index === filteredJobs.length - 1 ? ref : null}
             >
-              <JobCard job={{...job, id: parseInt(job.id)}} />
+              <JobCard job={{ ...job, id: parseInt(job.id) }} />
             </div>
           ))}
         </div>
@@ -113,6 +124,7 @@ export default function HomePage() {
     </main>
   );
 }
+
 const LoadingSkeleton = () => (
   <div className="space-y-4 animate-pulse">
     {[...Array(3)].map((_, i) => (

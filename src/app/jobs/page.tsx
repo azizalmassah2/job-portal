@@ -33,17 +33,8 @@ export default function JobsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ✅ شريط علوي */}
-      <nav className="bg-white shadow px-6 py-4 mb-6">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-blue-600">منصة التوظيف</Link>
-          <div className="space-x-4">
-            <Link href="/jobs" className="text-gray-700 hover:text-blue-500">الوظائف</Link>
-            <Link href="/add-job" className="text-gray-700 hover:text-blue-500">أضف وظيفة</Link>
-          </div>
-        </div>
-      </nav>
 
+      
       <main className="container mx-auto px-4">
         <h1 className="text-3xl font-bold mb-6 text-center">الوظائف المتاحة</h1>
 

@@ -1,149 +1,84 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient();
 
 async function main() {
-  // تشفير كلمات المرور
-  const hashedPassword1 = await bcrypt.hash("aziz123456", 10);
-  const hashedPassword2 = await bcrypt.hash("fatima123456", 10);
-
-  // مستخدمون
-  const user1 = await prisma.user.create({
+  // 1. إنشاء مستخدم
+  const user = await prisma.user.create({
     data: {
-      firstName: "Aziz",
-      lastName: "Almassah",
-      username: "aziz123",
-      email: "aziz@example.com",
-      password: hashedPassword1,
-      phone: "777123456",
-      countryCode: "+967",
-      dateOfBirth: new Date("1995-01-01"),
-      gender: "Male",
-      address: "Sana'a",
-      profilePicture: null,
+      firstName: 'عزيز',
+      lastName: 'المساح',
+      username: 'aziz2025',
+      email: "aziz+" + Date.now() + "@example.com",
+      password: 'hashed_password_123', // تأكد من التشفير في التطبيق الفعلي
+      phone: '777123456',
+      countryCode: '+967',
+      dateOfBirth: new Date('1990-01-01'),
+      gender: 'male',
       termsAccepted: true,
     },
   });
 
-  const user2 = await prisma.user.create({
+  console.log('تم إنشاء المستخدم:', user.id);
+
+  // 2. إنشاء شركة تابعة للمستخدم
+  const company = await prisma.company.create({
     data: {
-      firstName: "Fatima",
-      lastName: "Al-Hamdani",
-      username: "fatima88",
-      email: "fatima@example.com",
-      password: hashedPassword2,
-      phone: "777654321",
-      countryCode: "+967",
-      dateOfBirth: new Date("1990-05-20"),
-      gender: "Female",
-      address: "Aden",
-      profilePicture: null,
-      termsAccepted: true,
+      name: 'ألفا سوفت',
+      description: 'شركة تقنية متخصصة في تطوير الأنظمة',
+      email: 'info@alphasoft.com',
+      phone: '01-234567',
+      address: 'شارع الزبيري - صنعاء',
+      userId: user.id,
     },
   });
 
-  // شركات
-  const company1 = await prisma.company.create({
-    data: {
-      name: "TechYemen",
-      description: "شركة تقنية متخصصة في تطوير البرمجيات",
-      email: "contact@techyemen.com",
-      phone: "01-234567",
-      address: "Sana'a",
-      userId: user1.id,
-    },
+  console.log('تم إنشاء الشركة:', company.id);
+
+  // 3. إنشاء مهارات مرتبطة بالوظيفة
+  const skill1 = await prisma.skill.upsert({
+    where: { name: 'JavaScript' },
+    update: {},
+    create: { name: 'JavaScript' },
   });
 
-  const company2 = await prisma.company.create({
-    data: {
-      name: "Creative Solutions",
-      description: "شركة حلول إبداعية في التصميم والتسويق الرقمي",
-      email: "info@creative.com",
-      phone: "01-987654",
-      address: "Aden",
-      userId: user2.id,
-    },
+  const skill2 = await prisma.skill.upsert({
+    where: { name: 'React' },
+    update: {},
+    create: { name: 'React' },
   });
 
-  // مهارات
-  const skillFlutter = await prisma.skill.create({ data: { name: "Flutter" } });
-  const skillFirebase = await prisma.skill.create({ data: { name: "Firebase" } });
-  const skillReact = await prisma.skill.create({ data: { name: "React" } });
-  const skillNode = await prisma.skill.create({ data: { name: "Node.js" } });
-  const skillUIUX = await prisma.skill.create({ data: { name: "UI/UX Design" } });
-
-  // وظائف
-  const job1 = await prisma.job.create({
+  // 4. إنشاء وظيفة
+  const job = await prisma.job.create({
     data: {
-      title: "Flutter Developer",
-      description: "نبحث عن مطور Flutter محترف للانضمام إلى فريقنا.",
-      companyId: company1.id,
-      salaryMin: 500,
-      salaryMax: 1000,
-      location: "Sana'a",
-      type: "Full-Time",
-      experienceLevel: "Intermediate",
+      title: 'مطور واجهات أمامية',
+      description: 'نبحث عن مطور React لديه خبرة جيدة في JavaScript وواجهات المستخدم.',
+      salaryMin: 800,
+      salaryMax: 1500,
+      location: 'الرياض - عن بُعد',
+      type: 'REMOTE',
+      experienceLevel: 'MID',
+      status: 'ACTIVE',
+      companyId: company.id,
       skills: {
-        connect: [{ id: skillFlutter.id }, { id: skillFirebase.id }],
+        connect: [
+          { id: skill1.id },
+          { id: skill2.id },
+        ],
       },
     },
   });
 
-  const job2 = await prisma.job.create({
-    data: {
-      title: "React Frontend Engineer",
-      description: "مطلوب مهندس واجهة أمامية باستخدام React بخبرة سنتين على الأقل.",
-      companyId: company1.id,
-      salaryMin: 600,
-      salaryMax: 1200,
-      location: "Remote",
-      type: "Remote",
-      experienceLevel: "Senior",
-      skills: {
-        connect: [{ id: skillReact.id }],
-      },
-    },
-  });
-
-  const job3 = await prisma.job.create({
-    data: {
-      title: "Node.js Backend Developer",
-      description: "مطور Backend باستخدام Node.js للعمل على مشاريع متعددة.",
-      companyId: company2.id,
-      salaryMin: 700,
-      salaryMax: 1300,
-      location: "Aden",
-      type: "Full-Time",
-      experienceLevel: "Mid-Level",
-      skills: {
-        connect: [{ id: skillNode.id }],
-      },
-    },
-  });
-
-  const job4 = await prisma.job.create({
-    data: {
-      title: "UI/UX Designer",
-      description: "مصمم واجهات وتجربة مستخدم لإنشاء تصاميم مبتكرة.",
-      companyId: company2.id,
-      salaryMin: 400,
-      salaryMax: 900,
-      location: "Sana'a",
-      type: "Part-Time",
-      experienceLevel: "Junior",
-      skills: {
-        connect: [{ id: skillUIUX.id }],
-      },
-    },
-  });
-
-  console.log("✅ تم إدخال البيانات بنجاح.");
+  console.log('تم إنشاء الوظيفة:', job.id);
 }
 
 main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
+  .then(() => {
+    console.log('✅ تم تنفيذ السكربت بنجاح');
+    prisma.$disconnect();
+  })
+  .catch((error) => {
+    console.error('❌ حدث خطأ:', error);
+    prisma.$disconnect();
     process.exit(1);
   });

@@ -1,38 +1,17 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+// src/app/api/generate-resume/route.ts
+import { NextResponse } from 'next/server';
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-  
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: 'Prompt required' });
-
+export async function POST(request: Request) {
   try {
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: 'أنت مساعد لإنشاء سيرة ذاتية محترفة.' },
-          { role: 'user', content: prompt },
-        ],
-        max_tokens: 600,
-      }),
-    });
-    const data = await openAIResponse.json();
-    if (data.error) {
-      return res.status(500).json({ message: data.error.message });
-    }
-    const resumeText = data.choices[0].message.content;
-    res.status(200).json({ resume: resumeText });
+    const { userId } = await request.json();
+
+    // هنا تضع منطق الاتصال بـ API الذكاء الاصطناعي مثل OpenAI أو أي خدمة أخرى
+    // مثال تخيلي (استبدل بالكود الحقيقي حسب الخدمة التي تستخدمها):
+
+    const generatedResumeUrl = `https://fake-storage-service.com/resumes/${userId}-generated.pdf`;
+
+    return NextResponse.json({ resumeUrl: generatedResumeUrl });
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في الخادم' });
+    return NextResponse.json({ error: 'Failed to generate resume' }, { status: 500 });
   }
 }
